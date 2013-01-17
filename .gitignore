@@ -1,0 +1,8 @@
+# Visual Studio 2012
+*.sln
+*.*suo
+*.*sdf
+*.user
+*.filters
+[Dd]ebug/
+[Rr]elease/
