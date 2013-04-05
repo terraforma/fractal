@@ -6,7 +6,7 @@ FILE(GLOB_RECURSE FRACTAL_HEADERS include/*.h)
 FILE(GLOB_RECURSE FRACTAL_SOURCES src/*.cpp)
 
 # Set libraries and include paths
-SET(LIBS )
+SET(LIBS terra glfw pthread)
 SET(INCLUDE ${PROJECT_SOURCE_DIR}/include)
 
 SET(LIBRARY_OUTPUT_PATH lib/)

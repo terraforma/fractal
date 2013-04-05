@@ -16,3 +16,13 @@ cmake_install.cmake
 # Ignore executables and libraries
 bin/
 lib/
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+.elc
+auto-save-list
+tramp
+.\#*
