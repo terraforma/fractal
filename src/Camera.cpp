@@ -37,9 +37,10 @@ void Camera::Move(tfVec3f amount)
 	// Do forward/backward movement
     movement = MakeVec3f(sin(yRad)*amount.x, -sin(xRad)*amount.x, -cos(yRad)*amount.x);
 	m_position = Vec3fAdd(m_position, movement);
-	printf("%f %f %f\n", m_position.x, m_position.y, m_position.z);
 
 	// Do left/right movement
+	movement = MakeVec3f(cos(yRad)*amount.y, 0.0f, sin(yRad)*amount.y);
+	m_position = Vec3fAdd(m_position, movement);
 
 	// Do up/down movement
 }

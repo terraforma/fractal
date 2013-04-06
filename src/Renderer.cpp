@@ -55,7 +55,7 @@ void Renderer::Render()
 
 	glfwSetWindowSizeCallback(Renderer::WindowResize);
 
-	glClearColor(0.2f, 0.0f, 0.0f, 1.0f);
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glEnable (GL_DEPTH_TEST);
 	glEnable (GL_LIGHTING);
 	glEnable (GL_LIGHT0);
@@ -67,6 +67,7 @@ void Renderer::Render()
 	while (running)
 	{
 		// Poll input
+		// Movement
 		tfVec3f movement = {0.0f, 0.0f, 0.0f};
 		const float moveAmount = 0.1f;
 		if (glfwGetKey('W') == GLFW_PRESS) {
@@ -75,7 +76,29 @@ void Renderer::Render()
 		if (glfwGetKey('S') == GLFW_PRESS) {
 			movement.x -= moveAmount;
 		}
+		if (glfwGetKey('A') == GLFW_PRESS) {
+			movement.y -= moveAmount;
+		}
+		if (glfwGetKey('D') == GLFW_PRESS) {
+			movement.y += moveAmount;
+		}
 		m_camera.Move(movement);
+		// Rotation
+		tfVec3f rotation = {0.0f, 0.0f, 0.0f};
+		const float rotateAmount = 0.2f;
+		if (glfwGetKey(GLFW_KEY_LEFT) == GLFW_PRESS) {
+			rotation.y -= rotateAmount;
+		}
+		if (glfwGetKey(GLFW_KEY_RIGHT) == GLFW_PRESS) {
+			rotation.y += rotateAmount;
+		}
+		if (glfwGetKey(GLFW_KEY_UP) == GLFW_PRESS) {
+			rotation.x -= rotateAmount;
+		}
+		if (glfwGetKey(GLFW_KEY_DOWN) == GLFW_PRESS) {
+			rotation.x += rotateAmount;
+		}
+		m_camera.Rotate(rotation);
 
 		// Render
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
