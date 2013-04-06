@@ -53,9 +53,11 @@ void Renderer::Render()
 	if (glewInit() != GLEW_OK)
 		throw std::runtime_error("Unable to initialize glew");
 
+	m_landscape->Build();
+
 	glfwSetWindowSizeCallback(Renderer::WindowResize);
 
-	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+	glClearColor(0.5f, 0.0f, 0.0f, 1.0f);
 	glEnable (GL_DEPTH_TEST);
 	glEnable (GL_LIGHTING);
 	glEnable (GL_LIGHT0);
@@ -85,7 +87,7 @@ void Renderer::Render()
 		m_camera.Move(movement);
 		// Rotation
 		tfVec3f rotation = {0.0f, 0.0f, 0.0f};
-		const float rotateAmount = 0.2f;
+		const float rotateAmount = 0.7f;
 		if (glfwGetKey(GLFW_KEY_LEFT) == GLFW_PRESS) {
 			rotation.y -= rotateAmount;
 		}

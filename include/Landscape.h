@@ -29,6 +29,7 @@ public:
 	std::map<int, tfVec3f> RoadNodes();
 	std::vector<std::pair<int, int> > RoadEdges();
 
+	void Build();
 	void Render();
 private:
 	int ToBitmapCoordX(float x);
@@ -40,6 +41,12 @@ private:
 	tfBitmap m_densityMap;
 	tfBitmap m_waterMap;
 	tfRoadmap m_roadMap;
+
+	bool m_useVBO;
+	std::vector<tfVec3f> m_terrainVertices;
+	unsigned int m_terrainVBO;
+	std::vector<tfVec3f> m_roadVertices;
+	unsigned int m_roadVBO;
 };
 
 #endif /* _LANDSCAPE_H_ */

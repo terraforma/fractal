@@ -2,6 +2,7 @@
 
 #include <GL/glew.h>
 #include <GL/glfw.h>
+#include <cstddef>
 
 #define RENDER_SCALE 500.0f
 
@@ -58,7 +59,7 @@ const float Landscape::Height()
 
 const float Landscape::HeightAt(float x, float y)
 {
-	return m_heightMap.At(ToBitmapCoordX(x), ToBitmapCoordY(y))/255.0f;
+	return (m_heightMap.At(ToBitmapCoordX(x), ToBitmapCoordY(y))/255.0f);
 }
 
 const float Landscape::DensityAt(float x, float y)
@@ -91,11 +92,10 @@ float Landscape::ToWorldCoordY(int y)
 	return (y * MAP_SCALE)-(Height()/2);
 }
 
-void Landscape::Render()
+void Landscape::Build()
 {
-	// Render the terrain
-	glColor3f(0.0f, 0.8f, 0.0f);
-	glBegin(GL_QUADS);
+	m_useVBO = GLEW_ARB_vertex_buffer_object;
+	// Build the terrain vertices and buffer
 	for (int x = 1; x < m_heightMap.Width(); x++) 
 	{
 		for (int y = 1; y < m_heightMap.Height(); y++) 
@@ -104,25 +104,25 @@ void Landscape::Render()
 			float worldX, worldY;
 			worldX = ToWorldCoordX(x-1);
 			worldY = ToWorldCoordY(y-1);
-			tfVec3f p0 = MakeVec3f(worldX, worldY, HeightAt(worldX, worldY)); // top left
+			m_terrainVertices.push_back(MakeVec3f(worldX/RENDER_SCALE, worldY/RENDER_SCALE, HeightAt(worldX, worldY)/RENDER_SCALE)); // top left
 			worldX = ToWorldCoordX(x-1);
 			worldY = ToWorldCoordY(y);
-			tfVec3f p1 = MakeVec3f(worldX, worldY, HeightAt(worldX, worldY)); // bottom left
+			m_terrainVertices.push_back(MakeVec3f(worldX/RENDER_SCALE, worldY/RENDER_SCALE, HeightAt(worldX, worldY)/RENDER_SCALE)); // bottom left
 			worldX = ToWorldCoordX(x);
 			worldY = ToWorldCoordY(y);
-			tfVec3f p2 = MakeVec3f(worldX, worldY, HeightAt(worldX, worldY)); // bottom right
+			m_terrainVertices.push_back(MakeVec3f(worldX/RENDER_SCALE, worldY/RENDER_SCALE, HeightAt(worldX, worldY)/RENDER_SCALE)); // bottom right
 			worldX = ToWorldCoordX(x);
 			worldY = ToWorldCoordY(y-1);
-			tfVec3f p3 = MakeVec3f(worldX, worldY, HeightAt(worldX, worldY)); // top right
-			glVertex3f(p0.x/RENDER_SCALE, p0.y/RENDER_SCALE, p0.z/RENDER_SCALE);
-			glVertex3f(p1.x/RENDER_SCALE, p1.y/RENDER_SCALE, p1.z/RENDER_SCALE);
-			glVertex3f(p2.x/RENDER_SCALE, p2.y/RENDER_SCALE, p2.z/RENDER_SCALE);
-			glVertex3f(p3.x/RENDER_SCALE, p3.y/RENDER_SCALE, p3.z/RENDER_SCALE);
+			m_terrainVertices.push_back(MakeVec3f(worldX/RENDER_SCALE, worldY/RENDER_SCALE, HeightAt(worldX, worldY)/RENDER_SCALE)); // top right
 		}
 	}
-	glEnd();
+	if (m_useVBO) {
+		glGenBuffersARB(1, &m_terrainVBO);
+		glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_terrainVBO);
+		glBufferDataARB(GL_ARRAY_BUFFER_ARB, m_terrainVertices.size()*sizeof(tfVec3f), &m_terrainVertices[0], GL_STATIC_DRAW_ARB);
+	}
 
-	// Render the roadmap
+	// Build the roadmap vertices and buffer
 	std::map<int, tfVec3f> nodes = RoadNodes();
 	std::vector<std::pair<int, int> > edges = RoadEdges();
 	
@@ -130,15 +130,45 @@ void Landscape::Render()
 	// so that they are always visible.
 	const float roadElevation = 0.01f;
 
-	glLineWidth(2.0f);
-	glColor3f(1.0f, 1.0f, 1.0f);
-	glBegin(GL_LINES);
 	for (std::vector<std::pair<int, int> >::iterator it = edges.begin(); it != edges.end(); ++it)
 	{
 		tfVec3f nodeA = nodes[it->first];
 		tfVec3f nodeB = nodes[it->second];
-		glVertex3f(nodeA.x/RENDER_SCALE, nodeA.y/RENDER_SCALE, (nodeA.z/RENDER_SCALE)+roadElevation);
-		glVertex3f(nodeB.x/RENDER_SCALE, nodeB.y/RENDER_SCALE, (nodeB.z/RENDER_SCALE)+roadElevation);
+		m_roadVertices.push_back(MakeVec3f(nodeA.x/RENDER_SCALE, nodeA.y/RENDER_SCALE, (nodeA.z/RENDER_SCALE)+roadElevation));
+		m_roadVertices.push_back(MakeVec3f(nodeB.x/RENDER_SCALE, nodeB.y/RENDER_SCALE, (nodeB.z/RENDER_SCALE)+roadElevation));
 	}
-	glEnd();
+	if (m_useVBO) {
+		glGenBuffersARB(1, &m_roadVBO);
+		glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_roadVBO);
+		glBufferDataARB(GL_ARRAY_BUFFER_ARB, m_roadVertices.size()*sizeof(tfVec3f), &m_roadVertices[0], GL_STATIC_DRAW_ARB);
+	}
+}
+
+void Landscape::Render()
+{
+	glEnableClientState(GL_VERTEX_ARRAY);
+
+	int stride = sizeof(tfVec3f);//(char *) &(m_terrainVertices[1].x) - (char *) &(m_terrainVertices[0].x);
+	// Render the terrain
+	glColor3f(0.0f, 0.8f, 0.0f);
+	if (m_useVBO) {
+		glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_terrainVBO);
+		glVertexPointer(3, GL_FLOAT, stride, NULL);
+	} else {
+		glVertexPointer(3, GL_FLOAT, stride, m_terrainVertices.data());
+	}
+	glDrawArrays(GL_QUADS, 0, m_terrainVertices.size());
+
+	// Render the roadmap
+	glColor3f(1.0f, 1.0f, 1.0f);
+	glLineWidth(2.0f);
+	if (m_useVBO) {
+		glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_roadVBO);
+		glVertexPointer(3, GL_FLOAT, stride, NULL);
+	} else {
+		glVertexPointer(3, GL_FLOAT, stride, m_roadVertices.data());
+	}
+	glDrawArrays(GL_LINES, 0, m_roadVertices.size());
+
+	glEnableClientState(GL_VERTEX_ARRAY);
 }
