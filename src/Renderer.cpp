@@ -6,7 +6,8 @@
 Renderer* Renderer::m_singleton = 0;
 
 Renderer::Renderer(int width, int height, Landscape* l)
-	: m_width(width), m_height(height), m_landscape(l)
+	: m_width(width), m_height(height), m_landscape(l), 
+	  m_camera(MakeVec3f(0.0f, 0.0f, 2.0f), MakeVec3f(0.0f, 0.0f, 0.0f))
 {
 	m_singleton = this;
 
@@ -36,6 +37,12 @@ void Renderer::WindowResize(int width, int height)
 	m_singleton->m_height = height;
 
 	glViewport(0, 0, width, height);
+
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	gluPerspective(60, width/height, 1.0, 100.0);
+	
+	glMatrixMode(GL_MODELVIEW);
 }
 
 void Renderer::Render()
@@ -48,21 +55,35 @@ void Renderer::Render()
 
 	glfwSetWindowSizeCallback(Renderer::WindowResize);
 
-	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-
-	glTranslatef(0.0f, 0.0f, -100.0f);
+	glClearColor(0.2f, 0.0f, 0.0f, 1.0f);
+	glEnable (GL_DEPTH_TEST);
+	glEnable (GL_LIGHTING);
+	glEnable (GL_LIGHT0);
+	glEnable(GL_COLOR_MATERIAL);
+	glShadeModel (GL_SMOOTH);
 
 	bool running = true;
 
 	while (running)
 	{
-		glClear(GL_COLOR_BUFFER_BIT);
-		glLoadIdentity();
+		// Poll input
+		tfVec3f movement = {0.0f, 0.0f, 0.0f};
+		const float moveAmount = 0.1f;
+		if (glfwGetKey('W') == GLFW_PRESS) {
+			movement.x += moveAmount;
+		}
+		if (glfwGetKey('S') == GLFW_PRESS) {
+			movement.x -= moveAmount;
+		}
+		m_camera.Move(movement);
 
-		glPushMatrix();
+		// Render
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glLoadIdentity();
+		m_camera.Apply();
+
 		glColor3f(1.0f, 1.0f, 1.0f);
 		m_landscape->Render();
-		glPopMatrix();
 		
 		glfwSwapBuffers();
 

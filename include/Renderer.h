@@ -2,8 +2,10 @@
 #define _RENDERER_H_
 
 #include <Landscape.h>
+#include <Camera.h>
 
 #include <GL/glew.h>
+#include <GL/glu.h>
 #include <GL/glfw.h>
 
 class Renderer 
@@ -19,6 +21,7 @@ private:
 	int m_width;
 	int m_height;
 	Landscape* m_landscape;
+	Camera m_camera;
 
 	static Renderer* m_singleton;
 };

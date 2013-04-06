@@ -33,6 +33,8 @@ public:
 private:
 	int ToBitmapCoordX(float x);
 	int ToBitmapCoordY(float y);
+	float ToWorldCoordX(int x);
+	float ToWorldCoordY(int y);
 
 	tfBitmap m_heightMap;
 	tfBitmap m_densityMap;
