@@ -4,7 +4,8 @@
 
 int main(int _argc, char *_argv[])
 {
-	Renderer r(800, 600);
+	Landscape l(_argv[1], _argv[2], _argv[3], _argv[4]);
+	Renderer r(800, 600, &l);
 	GLFWthread renderThread;
 	if ((renderThread = r.StartThread()) < 0) 
 	{
