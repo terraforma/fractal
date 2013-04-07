@@ -5,16 +5,13 @@
 #include <cstdio>
 #include <cmath>
 
-#define PI 3.14159265f
-#define PI_RAD (PI/180.0f)
-
 Camera::Camera()
 {
-	m_position = MakeVec3f(0.0f, 0.0f, 2.0f);
-	m_viewDirection = MakeVec3f(0.0f, 0.0f, -1.0f);
-	m_rightVector = MakeVec3f(1.0f, 0.0f, 0.0f);
-	m_upVector = MakeVec3f(0.0f, 1.0f, 0.0f);
-	m_rotation = MakeVec3f(0.0f, 0.0f, 0.0f);
+	m_position = glm::vec3(0.0f, 0.0f, 2.0f);
+	m_viewDirection = glm::vec3(0.0f, 0.0f, -1.0f);
+	m_rightVector = glm::vec3(1.0f, 0.0f, 0.0f);
+	m_upVector = glm::vec3(0.0f, 1.0f, 0.0f);
+	m_rotation = glm::vec3(0.0f, 0.0f, 0.0f);
 }
 
 Camera::~Camera()
@@ -22,31 +19,31 @@ Camera::~Camera()
 
 }
 
-void Camera::Rotate(tfVec3f amount)
+void Camera::Rotate(glm::vec3 amount)
 {
 	m_rotation.x += amount.x;
-	m_viewDirection = Vec3fNormalize(Vec3fAdd(Vec3fMul(m_viewDirection, cos(amount.x*PI_RAD)), Vec3fMul(m_upVector, sin(amount.x*PI_RAD))));
-	m_upVector = Vec3fMul(Vec3fCross(m_viewDirection, m_rightVector), -1);
+	m_viewDirection = glm::normalize(m_viewDirection * float(cos(amount.x*PI_RAD)) + m_upVector * float(sin(amount.x*PI_RAD)));
+	m_upVector = glm::cross(m_viewDirection, m_rightVector) * -1.0f;
 
 	m_rotation.y += amount.y;
-	m_viewDirection = Vec3fNormalize(Vec3fSub(Vec3fMul(m_viewDirection, cos(amount.y*PI_RAD)), Vec3fMul(m_rightVector, sin(amount.y*PI_RAD))));
-	m_rightVector = Vec3fCross(m_viewDirection, m_upVector);
+	m_viewDirection = glm::normalize(m_viewDirection * float(cos(amount.y*PI_RAD)) - m_rightVector * float(sin(amount.y*PI_RAD)));
+	m_rightVector = glm::cross(m_viewDirection, m_upVector);
 
 	m_rotation.z += amount.z;
-	m_rightVector = Vec3fNormalize(Vec3fAdd(Vec3fMul(m_rightVector, cos(amount.z*PI_RAD)), Vec3fMul(m_upVector, sin(amount.z*PI_RAD))));
-	m_upVector = Vec3fMul(Vec3fCross(m_viewDirection, m_rightVector), -1);
+	m_rightVector = glm::normalize(m_rightVector * float(cos(amount.z*PI_RAD)) + m_upVector * float(sin(amount.z*PI_RAD)));
+	m_upVector = glm::cross(m_viewDirection, m_rightVector) * -1.0f;
 }
 
-void Camera::Move(tfVec3f amt)
+void Camera::Move(glm::vec3 amt)
 {
-	m_position = Vec3fAdd(m_position, Vec3fMul(m_viewDirection, -amt.x));
-	m_position = Vec3fAdd(m_position, Vec3fMul(m_rightVector, amt.y));
-	m_position = Vec3fAdd(m_position, Vec3fMul(m_upVector, amt.z));
+	m_position = m_position + m_viewDirection * -amt.x;
+	m_position = m_position + m_rightVector * amt.y;
+	m_position = m_position + m_upVector * amt.z;
 }
 
 void Camera::Apply()
 {
-	tfVec3f view = Vec3fAdd(m_position, m_viewDirection);
+	glm::vec3 view = m_position + m_viewDirection;
 
 	gluLookAt(m_position.x, m_position.y, m_position.z, view.x, view.y, view.z, m_upVector.x, m_upVector.y, m_upVector.z);
 }

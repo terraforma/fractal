@@ -23,9 +23,16 @@ Landscape::~Landscape()
 
 }
 
-std::map<int, tfVec3f> Landscape::RoadNodes()
+std::map<int, glm::vec3> Landscape::RoadNodes()
 {
-	return m_roadMap.Nodes();
+	std::map<int, tfVec3f> nodesOld = m_roadMap.Nodes();
+	std::map<int, glm::vec3> nodes;
+	for (std::map<int, tfVec3f>::iterator it = nodesOld.begin(); it != nodesOld.end(); ++it)
+	{
+		tfVec3f oldVec = it->second;
+		nodes[it->first] = glm::vec3(oldVec.x, oldVec.y, oldVec.z);
+	}
+	return nodes;
 }
 
 std::vector<std::pair<int, int> > Landscape::RoadEdges()
@@ -109,8 +116,8 @@ void Landscape::Build()
 			float worldX = ToWorldCoordX(x);
 			float worldY = ToWorldCoordY(y);
 			Point p;
-			p.pos = MakeVec3f(worldX/RENDER_SCALE, worldY/RENDER_SCALE, HeightAt(worldX, worldY)/RENDER_SCALE);
-			p.norm = MakeVec3f(0.0f, 0.0f, 0.0f);
+			p.pos = glm::vec3(worldX/RENDER_SCALE, worldY/RENDER_SCALE, HeightAt(worldX, worldY)/RENDER_SCALE);
+			p.norm = glm::vec3(0.0f, 0.0f, 0.0f);
 			m_terrainVertices.push_back(p);
 		}
 	}
@@ -119,17 +126,17 @@ void Landscape::Build()
 	{
 		for (int y = 1; y < m_heightMap.Height()-1; y++) 
 		{
-			tfVec3f p0 = m_terrainVertices[VERT_ADDR(x,y)].pos;
-			tfVec3f p1 = m_terrainVertices[VERT_ADDR(x-1,y)].pos;
-			tfVec3f p2 = m_terrainVertices[VERT_ADDR(x,y-1)].pos;
-			tfVec3f p3 = m_terrainVertices[VERT_ADDR(x+1,y)].pos;
-			tfVec3f p4 = m_terrainVertices[VERT_ADDR(x,y+1)].pos;
-			tfVec3f norm = MakeVec3f(0.0f, 0.0f, 0.0f);
-			norm = Vec3fAdd(norm, Vec3fNormalize(Vec3fCross(Vec3fSub(p1, p0), Vec3fSub(p2, p0))));
-			norm = Vec3fAdd(norm, Vec3fNormalize(Vec3fCross(Vec3fSub(p2, p0), Vec3fSub(p3, p0))));
-			norm = Vec3fAdd(norm, Vec3fNormalize(Vec3fCross(Vec3fSub(p3, p0), Vec3fSub(p4, p0))));
-			norm = Vec3fAdd(norm, Vec3fNormalize(Vec3fCross(Vec3fSub(p4, p0), Vec3fSub(p1, p0))));
-			norm = Vec3fNormalize(norm);
+			glm::vec3 p0 = m_terrainVertices[VERT_ADDR(x,y)].pos;
+			glm::vec3 p1 = m_terrainVertices[VERT_ADDR(x-1,y)].pos;
+			glm::vec3 p2 = m_terrainVertices[VERT_ADDR(x,y-1)].pos;
+			glm::vec3 p3 = m_terrainVertices[VERT_ADDR(x+1,y)].pos;
+			glm::vec3 p4 = m_terrainVertices[VERT_ADDR(x,y+1)].pos;
+			glm::vec3 norm(0.0f, 0.0f, 0.0f);
+			norm = norm + glm::normalize(glm::cross(p1 - p0, p2 - p0));
+			norm = norm + glm::normalize(glm::cross(p2 - p0, p3 - p0));
+			norm = norm + glm::normalize(glm::cross(p3 - p0, p4 - p0));
+			norm = norm + glm::normalize(glm::cross(p4 - p0, p1 - p0));
+			norm = glm::normalize(norm);
 			m_terrainVertices[VERT_ADDR(x,y)].norm = norm;
 		}
 	}
@@ -171,7 +178,7 @@ void Landscape::Build()
 
 
 	// Build the roadmap vertices and buffer
-	std::map<int, tfVec3f> nodes = RoadNodes();
+	std::map<int, glm::vec3> nodes = RoadNodes();
 	std::vector<std::pair<int, int> > edges = RoadEdges();
 	
 	// We want to place the roads ever so slightly higher than the terrain,
@@ -180,15 +187,15 @@ void Landscape::Build()
 
 	for (std::vector<std::pair<int, int> >::iterator it = edges.begin(); it != edges.end(); ++it)
 	{
-		tfVec3f nodeA = nodes[it->first];
-		tfVec3f nodeB = nodes[it->second];
-		m_roadVertices.push_back(MakeVec3f(nodeA.x/RENDER_SCALE, nodeA.y/RENDER_SCALE, (nodeA.z/RENDER_SCALE)*HEIGHT_SCALE+roadElevation));
-		m_roadVertices.push_back(MakeVec3f(nodeB.x/RENDER_SCALE, nodeB.y/RENDER_SCALE, (nodeB.z/RENDER_SCALE)*HEIGHT_SCALE+roadElevation));
+		glm::vec3 nodeA = nodes[it->first];
+		glm::vec3 nodeB = nodes[it->second];
+		m_roadVertices.push_back(glm::vec3(nodeA.x/RENDER_SCALE, nodeA.y/RENDER_SCALE, (nodeA.z/RENDER_SCALE)*HEIGHT_SCALE+roadElevation));
+		m_roadVertices.push_back(glm::vec3(nodeB.x/RENDER_SCALE, nodeB.y/RENDER_SCALE, (nodeB.z/RENDER_SCALE)*HEIGHT_SCALE+roadElevation));
 	}
 
 	glGenBuffersARB(1, &m_roadVBO);
 	glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_roadVBO);
-	glBufferDataARB(GL_ARRAY_BUFFER_ARB, m_roadVertices.size()*sizeof(tfVec3f), &m_roadVertices[0], GL_STATIC_DRAW_ARB);
+	glBufferDataARB(GL_ARRAY_BUFFER_ARB, m_roadVertices.size()*sizeof(glm::vec3), &m_roadVertices[0], GL_STATIC_DRAW_ARB);
 
 	// Load our shaders
 	m_terrainProg.Init(TerrainVS, TerrainFS);
@@ -215,6 +222,6 @@ void Landscape::Render()
 	glColor3f(1.0f, 1.0f, 1.0f);
 	glLineWidth(2.0f);
 	glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_roadVBO);
-	glVertexPointer(3, GL_FLOAT, sizeof(tfVec3f), NULL);
+	glVertexPointer(3, GL_FLOAT, sizeof(glm::vec3), NULL);
 	glDrawArrays(GL_LINES, 0, m_roadVertices.size());
 }

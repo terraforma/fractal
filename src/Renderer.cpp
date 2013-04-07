@@ -69,7 +69,7 @@ void Renderer::Render()
 	{
 		// Poll input
 		// Movement
-		tfVec3f movement = {0.0f, 0.0f, 0.0f};
+		glm::vec3 movement(0.0f, 0.0f, 0.0f);
 		const float moveAmount = 0.01f;
 		if (glfwGetKey('W') == GLFW_PRESS) {
 			movement.x -= moveAmount;
@@ -91,7 +91,7 @@ void Renderer::Render()
 		}
 		m_camera.Move(movement);
 		// Rotation
-		tfVec3f rotation = {0.0f, 0.0f, 0.0f};
+		glm::vec3 rotation(0.0f, 0.0f, 0.0f);
 		const float rotateAmount = 0.7f;
 		if (glfwGetKey(GLFW_KEY_UP) == GLFW_PRESS) {
 			rotation.x += rotateAmount;

@@ -4,6 +4,7 @@
 #include <libterra/Bitmap.h>
 #include <libterra/Roadmap.h>
 
+#include <glm/glm.hpp>
 #include <vector>
 #include <map>
 #include <utility>
@@ -16,8 +17,8 @@
 using namespace LibTerra;
 
 struct Point {
-	tfVec3f pos;
-	tfVec3f norm;
+	glm::vec3 pos;
+	glm::vec3 norm;
 };
 
 class Landscape
@@ -33,7 +34,7 @@ public:
 	const float DensityAt(float x, float y);
 	const float WaterAt(float x, float y);
 	
-	std::map<int, tfVec3f> RoadNodes();
+	std::map<int, glm::vec3> RoadNodes();
 	std::vector<std::pair<int, int> > RoadEdges();
 
 	void Build();
@@ -55,7 +56,7 @@ private:
 	std::vector<unsigned short> m_terrainIndices;
 	unsigned int m_terrainVBO;
 	unsigned int m_terrainIBO;
-	std::vector<tfVec3f> m_roadVertices;
+	std::vector<glm::vec3> m_roadVertices;
 	unsigned int m_roadVBO;
 };
 

@@ -1,11 +1,10 @@
 #ifndef _CAMERA_H_
 #define _CAMERA_H_
 
-#include <libterra/Vector.h>
-
-using namespace LibTerra;
+#include <glm/glm.hpp>
 
 #define PI 3.141592654f
+#define PI_RAD (PI/180.0f)
 
 class Camera
 {
@@ -13,16 +12,16 @@ public:
     Camera();
     virtual ~Camera();
 
-	void Move(tfVec3f amount);
-	void Rotate(tfVec3f amount);
+	void Move(glm::vec3 amount);
+	void Rotate(glm::vec3 amount);
 
 	void Apply();
 private:
-	tfVec3f m_viewDirection;
-	tfVec3f m_rightVector;
-	tfVec3f m_upVector;
-	tfVec3f m_position;
-	tfVec3f m_rotation;
+	glm::vec3 m_viewDirection;
+	glm::vec3 m_rightVector;
+	glm::vec3 m_upVector;
+	glm::vec3 m_position;
+	glm::vec3 m_rotation;
 };
 
 #endif /* _CAMERA_H_ */
