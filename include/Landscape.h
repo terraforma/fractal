@@ -9,6 +9,8 @@
 #include <utility>
 #include <string>
 
+#include <Shader.h>
+
 #define MAP_SCALE 1.0f
 
 using namespace LibTerra;
@@ -43,6 +45,7 @@ private:
 	tfRoadmap m_roadMap;
 
 	bool m_useVBO;
+	Shader m_terrainProg;
 	std::vector<tfVec3f> m_terrainVertices;
 	unsigned int m_terrainVBO;
 	std::vector<tfVec3f> m_roadVertices;

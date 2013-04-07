@@ -6,8 +6,7 @@
 Renderer* Renderer::m_singleton = 0;
 
 Renderer::Renderer(int width, int height, Landscape* l)
-	: m_width(width), m_height(height), m_landscape(l), 
-	  m_camera(MakeVec3f(0.0f, 0.0f, 2.0f), MakeVec3f(0.0f, 0.0f, 0.0f))
+	: m_width(width), m_height(height), m_landscape(l)
 {
 	m_singleton = this;
 
@@ -40,7 +39,7 @@ void Renderer::WindowResize(int width, int height)
 
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	gluPerspective(60, width/height, 1.0, 100.0);
+	gluPerspective(60, width/height, 0.1, 100.0);
 	
 	glMatrixMode(GL_MODELVIEW);
 }
@@ -73,10 +72,10 @@ void Renderer::Render()
 		tfVec3f movement = {0.0f, 0.0f, 0.0f};
 		const float moveAmount = 0.1f;
 		if (glfwGetKey('W') == GLFW_PRESS) {
-			movement.x += moveAmount;
+			movement.x -= moveAmount;
 		}
 		if (glfwGetKey('S') == GLFW_PRESS) {
-			movement.x -= moveAmount;
+			movement.x += moveAmount;
 		}
 		if (glfwGetKey('A') == GLFW_PRESS) {
 			movement.y -= moveAmount;
@@ -84,22 +83,35 @@ void Renderer::Render()
 		if (glfwGetKey('D') == GLFW_PRESS) {
 			movement.y += moveAmount;
 		}
+		if (glfwGetKey('Q') == GLFW_PRESS) {
+			movement.z -= moveAmount;
+		}
+		if (glfwGetKey('E') == GLFW_PRESS) {
+			movement.z += moveAmount;
+		}
 		m_camera.Move(movement);
 		// Rotation
 		tfVec3f rotation = {0.0f, 0.0f, 0.0f};
 		const float rotateAmount = 0.7f;
-		if (glfwGetKey(GLFW_KEY_LEFT) == GLFW_PRESS) {
-			rotation.y -= rotateAmount;
-		}
-		if (glfwGetKey(GLFW_KEY_RIGHT) == GLFW_PRESS) {
-			rotation.y += rotateAmount;
-		}
 		if (glfwGetKey(GLFW_KEY_UP) == GLFW_PRESS) {
-			rotation.x -= rotateAmount;
-		}
-		if (glfwGetKey(GLFW_KEY_DOWN) == GLFW_PRESS) {
 			rotation.x += rotateAmount;
 		}
+		if (glfwGetKey(GLFW_KEY_DOWN) == GLFW_PRESS) {
+			rotation.x -= rotateAmount;
+		}
+		if (glfwGetKey(GLFW_KEY_LEFT) == GLFW_PRESS) {
+			rotation.y += rotateAmount;
+		}
+		if (glfwGetKey(GLFW_KEY_RIGHT) == GLFW_PRESS) {
+			rotation.y -= rotateAmount;
+		}
+		if (glfwGetKey('Z') == GLFW_PRESS) {
+			rotation.z += rotateAmount;
+		}
+		if (glfwGetKey('C') == GLFW_PRESS) {
+			rotation.z -= rotateAmount;
+		}
+		
 		m_camera.Rotate(rotation);
 
 		// Render

@@ -10,16 +10,17 @@ using namespace LibTerra;
 class Camera
 {
 public:
-    Camera(tfVec3f position, tfVec3f rotation);
+    Camera();
     virtual ~Camera();
 
-	void Rotate(tfVec3f rotation);
-	void Translate(tfVec3f direction);
-
 	void Move(tfVec3f amount);
+	void Rotate(tfVec3f amount);
 
 	void Apply();
 private:
+	tfVec3f m_viewDirection;
+	tfVec3f m_rightVector;
+	tfVec3f m_upVector;
 	tfVec3f m_position;
 	tfVec3f m_rotation;
 };
