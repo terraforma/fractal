@@ -1,5 +1,6 @@
 #include <Renderer.h>
 
+#include <glm/gtc/type_ptr.hpp>
 #include <stdexcept>
 #include <cstdio>
 
@@ -58,10 +59,9 @@ void Renderer::Render()
 
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glEnable (GL_DEPTH_TEST);
-	glEnable (GL_LIGHTING);
-	glEnable (GL_LIGHT0);
-	glEnable(GL_COLOR_MATERIAL);
 	glShadeModel (GL_SMOOTH);
+
+	glm::vec4 lightPos(0.0f, 0.0f, 10.0f, 0.0f);
 
 	bool running = true;
 
@@ -119,8 +119,13 @@ void Renderer::Render()
 		glLoadIdentity();
 		m_camera.Apply();
 
+		// Calculate light position
+		glm::mat4 mv;
+		glGetFloatv(GL_MODELVIEW_MATRIX, glm::value_ptr(mv));
+		glm::vec4 adjustedLightPos = mv * lightPos;
+
 		glColor3f(1.0f, 1.0f, 1.0f);
-		m_landscape->Render();
+		m_landscape->Render(adjustedLightPos);
 		
 		glfwSwapBuffers();
 

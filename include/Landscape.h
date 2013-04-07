@@ -38,7 +38,7 @@ public:
 	std::vector<std::pair<int, int> > RoadEdges();
 
 	void Build();
-	void Render();
+	void Render(glm::vec4 lightPos);
 private:
 	int ToBitmapCoordX(float x);
 	int ToBitmapCoordY(float y);

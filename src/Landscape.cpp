@@ -1,5 +1,6 @@
 #include <Landscape.h>
 
+#include <glm/gtc/type_ptr.hpp>
 #include <GL/glew.h>
 #include <GL/glfw.h>
 #include <cstddef>
@@ -201,14 +202,16 @@ void Landscape::Build()
 	m_terrainProg.Init(TerrainVS, TerrainFS);
 }
 
-void Landscape::Render()
+void Landscape::Render(glm::vec4 lightPos)
 {
 	glEnableClientState(GL_VERTEX_ARRAY);
 	glEnableClientState(GL_NORMAL_ARRAY);
 
 	// Render the terrain
 	glColor3f(0.0f, 0.8f, 0.0f);
-//	m_terrainProg.Bind();
+	m_terrainProg.Bind();
+	int lightPosUniform = glGetUniformLocation(m_terrainProg.Id(), "tf_LightPos");
+	glUniform4fv(lightPosUniform, 1, glm::value_ptr(lightPos));
 
 	glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_terrainVBO);
 	glVertexPointer(3, GL_FLOAT, sizeof(Point), offsetof(Point, pos));
@@ -216,7 +219,7 @@ void Landscape::Render()
 	glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, m_terrainIBO);
 	glDrawElements(GL_TRIANGLES, m_terrainIndices.size(), GL_UNSIGNED_SHORT, 0);
 
-//	m_terrainProg.Unbind();
+	m_terrainProg.Unbind();
 
 	// Render the roadmap
 	glColor3f(1.0f, 1.0f, 1.0f);
