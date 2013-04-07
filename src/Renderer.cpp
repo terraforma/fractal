@@ -56,7 +56,7 @@ void Renderer::Render()
 
 	glfwSetWindowSizeCallback(Renderer::WindowResize);
 
-	glClearColor(0.5f, 0.0f, 0.0f, 1.0f);
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glEnable (GL_DEPTH_TEST);
 	glEnable (GL_LIGHTING);
 	glEnable (GL_LIGHT0);
@@ -70,7 +70,7 @@ void Renderer::Render()
 		// Poll input
 		// Movement
 		tfVec3f movement = {0.0f, 0.0f, 0.0f};
-		const float moveAmount = 0.1f;
+		const float moveAmount = 0.01f;
 		if (glfwGetKey('W') == GLFW_PRESS) {
 			movement.x -= moveAmount;
 		}

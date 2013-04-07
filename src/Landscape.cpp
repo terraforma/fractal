@@ -6,6 +6,7 @@
 
 #include <ShaderDef.h>
 
+#define HEIGHT_SCALE 10.0f
 #define RENDER_SCALE 500.0f
 
 Landscape::Landscape(std::string heightFile, std::string densityFile, std::string waterFile, std::string roadFile)
@@ -62,7 +63,7 @@ const float Landscape::Height()
 
 const float Landscape::HeightAt(float x, float y)
 {
-	return (m_heightMap.At(ToBitmapCoordX(x), ToBitmapCoordY(y))/255.0f);
+	return (m_heightMap.At(ToBitmapCoordX(x), ToBitmapCoordY(y))/255.0f)*HEIGHT_SCALE;
 }
 
 const float Landscape::DensityAt(float x, float y)
@@ -131,14 +132,14 @@ void Landscape::Build()
 	
 	// We want to place the roads ever so slightly higher than the terrain,
 	// so that they are always visible.
-	const float roadElevation = 0.01f;
+	const float roadElevation = 0.003f;
 
 	for (std::vector<std::pair<int, int> >::iterator it = edges.begin(); it != edges.end(); ++it)
 	{
 		tfVec3f nodeA = nodes[it->first];
 		tfVec3f nodeB = nodes[it->second];
-		m_roadVertices.push_back(MakeVec3f(nodeA.x/RENDER_SCALE, nodeA.y/RENDER_SCALE, (nodeA.z/RENDER_SCALE)+roadElevation));
-		m_roadVertices.push_back(MakeVec3f(nodeB.x/RENDER_SCALE, nodeB.y/RENDER_SCALE, (nodeB.z/RENDER_SCALE)+roadElevation));
+		m_roadVertices.push_back(MakeVec3f(nodeA.x/RENDER_SCALE, nodeA.y/RENDER_SCALE, (nodeA.z/RENDER_SCALE)*HEIGHT_SCALE+roadElevation));
+		m_roadVertices.push_back(MakeVec3f(nodeB.x/RENDER_SCALE, nodeB.y/RENDER_SCALE, (nodeB.z/RENDER_SCALE)*HEIGHT_SCALE+roadElevation));
 	}
 	if (m_useVBO) {
 		glGenBuffersARB(1, &m_roadVBO);
