@@ -98,33 +98,53 @@ float Landscape::ToWorldCoordY(int y)
 
 void Landscape::Build()
 {
-	m_useVBO = GLEW_ARB_vertex_buffer_object;
+
 	// Build the terrain vertices and buffer
+	for (int x = 0; x < m_heightMap.Width(); x++) 
+	{
+		for (int y = 0; y < m_heightMap.Height(); y++) 
+		{
+			float worldX = ToWorldCoordX(x);
+			float worldY = ToWorldCoordY(y);
+			m_terrainVertices.push_back(MakeVec3f(worldX/RENDER_SCALE, worldY/RENDER_SCALE, HeightAt(worldX, worldY)/RENDER_SCALE));
+		}
+	}
+
+	// Build terrain indices and buffer
 	for (int x = 1; x < m_heightMap.Width(); x++) 
 	{
 		for (int y = 1; y < m_heightMap.Height(); y++) 
 		{
-			// Create a quad containing the 4 points left+up
-			float worldX, worldY;
-			worldX = ToWorldCoordX(x-1);
-			worldY = ToWorldCoordY(y-1);
-			m_terrainVertices.push_back(MakeVec3f(worldX/RENDER_SCALE, worldY/RENDER_SCALE, HeightAt(worldX, worldY)/RENDER_SCALE)); // top left
-			worldX = ToWorldCoordX(x-1);
-			worldY = ToWorldCoordY(y);
-			m_terrainVertices.push_back(MakeVec3f(worldX/RENDER_SCALE, worldY/RENDER_SCALE, HeightAt(worldX, worldY)/RENDER_SCALE)); // bottom left
-			worldX = ToWorldCoordX(x);
-			worldY = ToWorldCoordY(y);
-			m_terrainVertices.push_back(MakeVec3f(worldX/RENDER_SCALE, worldY/RENDER_SCALE, HeightAt(worldX, worldY)/RENDER_SCALE)); // bottom right
-			worldX = ToWorldCoordX(x);
-			worldY = ToWorldCoordY(y-1);
-			m_terrainVertices.push_back(MakeVec3f(worldX/RENDER_SCALE, worldY/RENDER_SCALE, HeightAt(worldX, worldY)/RENDER_SCALE)); // top right
+			// Define a quad containing the 4 points left+up
+			// Top left
+			int p0X = x-1;
+			int p0Y = y-1;
+			// Bottom left
+			int p1X = x-1;
+			int p1Y = y;
+			// Bottom right
+			int p2X = x;
+			int p2Y = y;
+			// Top right
+			int p3X = x;
+			int p3Y = y-1;
+			m_terrainIndices.push_back((p0X * m_heightMap.Width())+p0Y);
+			m_terrainIndices.push_back((p1X * m_heightMap.Width())+p1Y);
+			m_terrainIndices.push_back((p2X * m_heightMap.Width())+p2Y);
+
+			m_terrainIndices.push_back((p0X * m_heightMap.Width())+p0Y);
+			m_terrainIndices.push_back((p2X * m_heightMap.Width())+p2Y);
+			m_terrainIndices.push_back((p3X * m_heightMap.Width())+p3Y);
 		}
 	}
-	if (m_useVBO) {
-		glGenBuffersARB(1, &m_terrainVBO);
-		glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_terrainVBO);
-		glBufferDataARB(GL_ARRAY_BUFFER_ARB, m_terrainVertices.size()*sizeof(tfVec3f), &m_terrainVertices[0], GL_STATIC_DRAW_ARB);
-	}
+	glGenBuffersARB(1, &m_terrainVBO);
+	glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_terrainVBO);
+	glBufferDataARB(GL_ARRAY_BUFFER_ARB, m_terrainVertices.size()*sizeof(tfVec3f), &m_terrainVertices[0], GL_STATIC_DRAW);
+
+	glGenBuffersARB(1, &m_terrainIBO);
+	glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER, m_terrainIBO);
+	glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER, m_terrainIndices.size()*sizeof(unsigned short), &m_terrainIndices[0], GL_STATIC_DRAW);
+
 
 	// Build the roadmap vertices and buffer
 	std::map<int, tfVec3f> nodes = RoadNodes();
@@ -141,11 +161,10 @@ void Landscape::Build()
 		m_roadVertices.push_back(MakeVec3f(nodeA.x/RENDER_SCALE, nodeA.y/RENDER_SCALE, (nodeA.z/RENDER_SCALE)*HEIGHT_SCALE+roadElevation));
 		m_roadVertices.push_back(MakeVec3f(nodeB.x/RENDER_SCALE, nodeB.y/RENDER_SCALE, (nodeB.z/RENDER_SCALE)*HEIGHT_SCALE+roadElevation));
 	}
-	if (m_useVBO) {
-		glGenBuffersARB(1, &m_roadVBO);
-		glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_roadVBO);
-		glBufferDataARB(GL_ARRAY_BUFFER_ARB, m_roadVertices.size()*sizeof(tfVec3f), &m_roadVertices[0], GL_STATIC_DRAW_ARB);
-	}
+
+	glGenBuffersARB(1, &m_roadVBO);
+	glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_roadVBO);
+	glBufferDataARB(GL_ARRAY_BUFFER_ARB, m_roadVertices.size()*sizeof(tfVec3f), &m_roadVertices[0], GL_STATIC_DRAW_ARB);
 
 	// Load our shaders
 	m_terrainProg.Init(TerrainVS, TerrainFS);
@@ -158,26 +177,19 @@ void Landscape::Render()
 	int stride = sizeof(tfVec3f);
 	// Render the terrain
 	glColor3f(0.0f, 0.8f, 0.0f);
-	if (m_useVBO) {
-		glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_terrainVBO);
-		glVertexPointer(3, GL_FLOAT, stride, NULL);
-	} else {
-		glVertexPointer(3, GL_FLOAT, stride, m_terrainVertices.data());
-	}
 	m_terrainProg.Bind();
-	glDrawArrays(GL_QUADS, 0, m_terrainVertices.size());
+
+	glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_terrainVBO);
+	glVertexPointer(3, GL_FLOAT, stride, NULL);
+	glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, m_terrainIBO);
+	glDrawElements(GL_TRIANGLES, m_terrainIndices.size(), GL_UNSIGNED_SHORT, 0);
+
 	m_terrainProg.Unbind();
 
 	// Render the roadmap
 	glColor3f(1.0f, 1.0f, 1.0f);
 	glLineWidth(2.0f);
-	if (m_useVBO) {
-		glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_roadVBO);
-		glVertexPointer(3, GL_FLOAT, stride, NULL);
-	} else {
-		glVertexPointer(3, GL_FLOAT, stride, m_roadVertices.data());
-	}
+	glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_roadVBO);
+	glVertexPointer(3, GL_FLOAT, stride, NULL);
 	glDrawArrays(GL_LINES, 0, m_roadVertices.size());
-
-	glEnableClientState(GL_VERTEX_ARRAY);
 }
