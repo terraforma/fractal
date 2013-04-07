@@ -15,6 +15,11 @@
 
 using namespace LibTerra;
 
+struct Point {
+	tfVec3f pos;
+	tfVec3f norm;
+};
+
 class Landscape
 {
 public:
@@ -46,7 +51,7 @@ private:
 
 	bool m_useVBO;
 	Shader m_terrainProg;
-	std::vector<tfVec3f> m_terrainVertices;
+	std::vector<Point> m_terrainVertices;
 	std::vector<unsigned short> m_terrainIndices;
 	unsigned int m_terrainVBO;
 	unsigned int m_terrainIBO;
