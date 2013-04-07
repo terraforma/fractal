@@ -4,10 +4,13 @@
 #include <GL/glfw.h>
 #include <cstddef>
 
+#include <ShaderDef.h>
+
 #define RENDER_SCALE 500.0f
 
 Landscape::Landscape(std::string heightFile, std::string densityFile, std::string waterFile, std::string roadFile)
-	: m_heightMap(heightFile), m_densityMap(densityFile), m_waterMap(waterFile), m_roadMap(roadFile)
+	: m_heightMap(heightFile), m_densityMap(densityFile), 
+	  m_waterMap(waterFile), m_roadMap(roadFile)
 {
 	
 }
@@ -142,13 +145,16 @@ void Landscape::Build()
 		glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_roadVBO);
 		glBufferDataARB(GL_ARRAY_BUFFER_ARB, m_roadVertices.size()*sizeof(tfVec3f), &m_roadVertices[0], GL_STATIC_DRAW_ARB);
 	}
+
+	// Load our shaders
+	m_terrainProg.Init(TerrainVS, TerrainFS);
 }
 
 void Landscape::Render()
 {
 	glEnableClientState(GL_VERTEX_ARRAY);
 
-	int stride = sizeof(tfVec3f);//(char *) &(m_terrainVertices[1].x) - (char *) &(m_terrainVertices[0].x);
+	int stride = sizeof(tfVec3f);
 	// Render the terrain
 	glColor3f(0.0f, 0.8f, 0.0f);
 	if (m_useVBO) {
@@ -157,7 +163,9 @@ void Landscape::Render()
 	} else {
 		glVertexPointer(3, GL_FLOAT, stride, m_terrainVertices.data());
 	}
+	m_terrainProg.Bind();
 	glDrawArrays(GL_QUADS, 0, m_terrainVertices.size());
+	m_terrainProg.Unbind();
 
 	// Render the roadmap
 	glColor3f(1.0f, 1.0f, 1.0f);
