@@ -108,7 +108,7 @@ float Landscape::ToWorldCoordY(int y)
 
 void Landscape::Build()
 {
-
+	const float terrainTexScale = 10.0f; // How many quads to scale the texture across
 	// Build the terrain vertices and buffer
 	for (int x = 0; x < m_heightMap.Width(); x++) 
 	{
@@ -119,6 +119,7 @@ void Landscape::Build()
 			Point p;
 			p.pos = glm::vec3(worldX/RENDER_SCALE, worldY/RENDER_SCALE, HeightAt(worldX, worldY)/RENDER_SCALE);
 			p.norm = glm::vec3(0.0f, 0.0f, 0.0f);
+			p.uv = glm::vec2(x/terrainTexScale, y/terrainTexScale);
 			m_terrainVertices.push_back(p);
 		}
 	}
@@ -200,22 +201,34 @@ void Landscape::Build()
 
 	// Load our shaders
 	m_terrainProg.Init(TerrainVS, TerrainFS);
+
+	// Load our textures
+	glGenTextures(1, &m_grassTexture);
+	glActiveTexture(0);
+	glBindTexture(GL_TEXTURE_2D, m_grassTexture);
+	glfwLoadTexture2D("textures/grass-texture.tga", GLFW_BUILD_MIPMAPS_BIT);
 }
 
 void Landscape::Render(glm::vec4 lightPos)
 {
 	glEnableClientState(GL_VERTEX_ARRAY);
 	glEnableClientState(GL_NORMAL_ARRAY);
+	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 
 	// Render the terrain
 	glColor3f(0.0f, 0.8f, 0.0f);
 	m_terrainProg.Bind();
+
+	// Pass our uniforms to the shader
 	int lightPosUniform = glGetUniformLocation(m_terrainProg.Id(), "tf_LightPos");
 	glUniform4fv(lightPosUniform, 1, glm::value_ptr(lightPos));
+	int grassTexUniform = glGetUniformLocation(m_terrainProg.Id(), "tf_GrassTexture");
+	glUniform1i(grassTexUniform, 0); // Unit 0
 
 	glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_terrainVBO);
-	glVertexPointer(3, GL_FLOAT, sizeof(Point), offsetof(Point, pos));
+	glVertexPointer(3, GL_FLOAT, sizeof(Point), (const void*)offsetof(Point, pos));
 	glNormalPointer(GL_FLOAT, sizeof(Point), (const void*)offsetof(Point, norm));
+	glTexCoordPointer(2, GL_FLOAT, sizeof(Point), (const void*)offsetof(Point, uv));
 	glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, m_terrainIBO);
 	glDrawElements(GL_TRIANGLES, m_terrainIndices.size(), GL_UNSIGNED_SHORT, 0);
 

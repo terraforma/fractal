@@ -28,12 +28,26 @@ void Shader::Init(const char* vertShader, const char* fragShader)
 	glShaderSource(m_fragProgId, 1, &fragShader, 0);
 
 	glCompileShader(m_vertProgId);
+	if (!ShaderCompiled(m_vertProgId))
+	{
+		printf("Vertex shader compile failed:\n");
+		DumpLog(m_vertProgId);
+	}
 	glCompileShader(m_fragProgId);
+	if (!ShaderCompiled(m_fragProgId))
+	{
+		printf("Fragment shader compile failed:\n");
+		DumpLog(m_fragProgId);
+	}
 
 	m_id = glCreateProgram();
 	glAttachShader(m_id, m_vertProgId);
 	glAttachShader(m_id, m_fragProgId);
 	glLinkProgram(m_id);
+	if (!ProgLinked(m_id))
+	{
+		DumpLog(m_id);
+	}
 }
 
 Shader::~Shader()
@@ -45,6 +59,35 @@ Shader::~Shader()
 		glDeleteShader(m_vertProgId);
 		glDeleteShader(m_fragProgId);
 		glDeleteProgram(m_id);
+	}
+}
+
+bool Shader::ShaderCompiled(unsigned int id)
+{
+	int compiled;
+	glGetObjectParameterivARB(id, GL_COMPILE_STATUS, &compiled);
+	return compiled;
+}
+
+bool Shader::ProgLinked(unsigned int id)
+{
+	int linked;
+	glGetObjectParameterivARB(id, GL_LINK_STATUS, &linked);
+	return linked;
+}
+
+void Shader::DumpLog(unsigned int id)
+{
+	int bufferLen = 0;
+	int len = 0;
+
+	glGetShaderiv(id, GL_INFO_LOG_LENGTH , &bufferLen);
+	if (bufferLen > 1)
+	{
+		char* compileLog = new char[bufferLen];
+		glGetInfoLogARB(id, bufferLen, &len, compileLog);
+		printf("Compile log: %s\n", compileLog);
+		delete[] compileLog;
 	}
 }
 
