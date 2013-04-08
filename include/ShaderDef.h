@@ -27,4 +27,15 @@ void main() { \
     gl_FragColor = textureColor * lightFactor; \
 }";
 
+const char* RoadVS = "void main() { \
+    gl_TexCoord[0] = gl_MultiTexCoord0; \
+    gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex; \
+}";
+
+const char* RoadFS = "uniform sampler2D tf_RoadTexture; \
+void main() { \
+    vec4 textureColor = texture2D(tf_RoadTexture, vec2(gl_TexCoord[0])); \
+    gl_FragColor = textureColor; \
+}";
+
 #endif /* _SHADERDEF_H_ */

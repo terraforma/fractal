@@ -1,6 +1,7 @@
 #include <Landscape.h>
 
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtc/swizzle.hpp>
 #include <GL/glew.h>
 #include <GL/glfw.h>
 #include <cstddef>
@@ -8,7 +9,7 @@
 #include <ShaderDef.h>
 
 #define HEIGHT_SCALE 10.0f
-#define RENDER_SCALE 500.0f
+#define RENDER_SCALE 50.0f
 
 #define VERT_ADDR(x,y) (((x) * m_heightMap.Width())+(y))
 
@@ -187,22 +188,117 @@ void Landscape::Build()
 	
 	// We want to place the roads ever so slightly higher than the terrain,
 	// so that they are always visible.
-	const float roadElevation = 0.003f;
+	const float roadElevation = 1.0f/RENDER_SCALE;
+	const float roadWidth = 4.0f/RENDER_SCALE;
+	int rPointIdx = 0;
 
+	// Create the roads
 	for (std::vector<std::pair<int, int> >::iterator it = edges.begin(); it != edges.end(); ++it)
 	{
-		glm::vec3 nodeA = nodes[it->first];
-		glm::vec3 nodeB = nodes[it->second];
-		m_roadVertices.push_back(glm::vec3(nodeA.x/RENDER_SCALE, nodeA.y/RENDER_SCALE, (nodeA.z/RENDER_SCALE)*HEIGHT_SCALE+roadElevation));
-		m_roadVertices.push_back(glm::vec3(nodeB.x/RENDER_SCALE, nodeB.y/RENDER_SCALE, (nodeB.z/RENDER_SCALE)*HEIGHT_SCALE+roadElevation));
+		glm::vec3 nodeA = nodes[it->first]/RENDER_SCALE;
+		glm::vec3 nodeB = nodes[it->second]/RENDER_SCALE;
+		// Do our various adjustments
+		nodeA.z *= HEIGHT_SCALE;
+		nodeA.z += roadElevation;
+		nodeB.z *= HEIGHT_SCALE;
+		nodeB.z += roadElevation;
+
+		// Move the nodes in to make room for intersections
+		glm::vec3 direction = glm::normalize(nodeA-nodeB);
+		nodeA -= direction*(roadWidth/2.0f);
+		nodeB += direction*(roadWidth/2.0f);
+
+		// Find a unit vector perpendicular to our line
+		glm::vec3 perpendicular = glm::vec3(-direction.y, direction.x, direction.z);
+		// Find the four points of the quad representing our road
+		Point p0;
+		Point p1;
+		Point p2;
+		Point p3;
+		p0.pos = nodeA+(perpendicular*(roadWidth/2.0f));
+		p1.pos = nodeA-(perpendicular*(roadWidth/2.0f));
+		p2.pos = nodeB-(perpendicular*(roadWidth/2.0f));
+		p3.pos = nodeB+(perpendicular*(roadWidth/2.0f));
+		p0.uv = glm::vec2(1.0f, 0.0f);
+		p1.uv = glm::vec2(0.0f, 0.0f);
+		p2.uv = glm::vec2(0.0f, 1.0f);
+		p3.uv = glm::vec2(1.0f, 1.0f);
+
+		m_roadVertices.push_back(p0);
+		m_roadVertices.push_back(p1);
+		m_roadVertices.push_back(p2);
+
+		m_roadVertices.push_back(p0);
+		m_roadVertices.push_back(p2);
+		m_roadVertices.push_back(p3);
+
+		m_roadIndices.push_back(rPointIdx++);
+		m_roadIndices.push_back(rPointIdx++);
+		m_roadIndices.push_back(rPointIdx++);
+
+		m_roadIndices.push_back(rPointIdx++);
+		m_roadIndices.push_back(rPointIdx++);
+		m_roadIndices.push_back(rPointIdx++);
+	}
+
+	// Create an intersection at each node
+	for (std::map<int, glm::vec3>::iterator it = nodes.begin(); it != nodes.end(); ++it)
+	{
+		glm::vec3 centerPoint = it->second;
+		centerPoint /= RENDER_SCALE;
+		centerPoint.z *= HEIGHT_SCALE;
+		centerPoint.z += roadElevation;
+
+		float halfWidth = roadWidth/2.0f;
+		// Create our 5 points
+		Point p0, p1, p2, p3, p4;
+		p0.pos = centerPoint;
+		p1.pos = glm::vec3(centerPoint.x-halfWidth, centerPoint.y-halfWidth, centerPoint.z);
+		p2.pos = glm::vec3(centerPoint.x-halfWidth, centerPoint.y+halfWidth, centerPoint.z);
+		p3.pos = glm::vec3(centerPoint.x+halfWidth, centerPoint.y+halfWidth, centerPoint.z);
+		p4.pos = glm::vec3(centerPoint.x+halfWidth, centerPoint.y-halfWidth, centerPoint.z);
+		p0.uv = glm::vec2(0.5f, 0);
+		p1.uv = glm::vec2(0.0f, 1.0f);
+		p2.uv = glm::vec2(1.0f, 1.0f);
+		p3.uv = glm::vec2(0.0f, 1.0f);
+		p4.uv = glm::vec2(1.0f, 1.0f);
+
+		// Define the 4 triangles
+		m_roadVertices.push_back(p0);
+		m_roadVertices.push_back(p1);
+		m_roadVertices.push_back(p2);
+
+		m_roadVertices.push_back(p0);
+		m_roadVertices.push_back(p2);
+		m_roadVertices.push_back(p3);
+
+		m_roadVertices.push_back(p0);
+		m_roadVertices.push_back(p3);
+		m_roadVertices.push_back(p4);
+
+		m_roadVertices.push_back(p0);
+		m_roadVertices.push_back(p4);
+		m_roadVertices.push_back(p1);
+
+		for (int i = 0; i < 4; i++)
+		{
+			m_roadIndices.push_back(rPointIdx++);
+			m_roadIndices.push_back(rPointIdx++);
+			m_roadIndices.push_back(rPointIdx++);
+		}
 	}
 
 	glGenBuffersARB(1, &m_roadVBO);
 	glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_roadVBO);
-	glBufferDataARB(GL_ARRAY_BUFFER_ARB, m_roadVertices.size()*sizeof(glm::vec3), &m_roadVertices[0], GL_STATIC_DRAW_ARB);
+	glBufferDataARB(GL_ARRAY_BUFFER_ARB, m_roadVertices.size()*sizeof(Point), &m_roadVertices[0], GL_STATIC_DRAW_ARB);
+
+	glGenBuffersARB(1, &m_roadIBO);
+	glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER, m_roadIBO);
+	glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER, m_roadIndices.size()*sizeof(unsigned int), &m_roadIndices[0], GL_STATIC_DRAW);
 
 	// Load our shaders
 	m_terrainProg.Init(TerrainVS, TerrainFS);
+	m_roadProg.Init(RoadVS, RoadFS);
 
 	// Load our textures
 	glGenTextures(1, &m_grassTexture);
@@ -214,6 +310,11 @@ void Landscape::Build()
 	glActiveTexture(GL_TEXTURE0+1);
 	glBindTexture(GL_TEXTURE_2D, m_waterTexture);
 	glfwLoadTexture2D("textures/water.tga", GLFW_BUILD_MIPMAPS_BIT);
+
+	glGenTextures(1, &m_roadTexture);
+	glActiveTexture(GL_TEXTURE0+2);
+	glBindTexture(GL_TEXTURE_2D, m_roadTexture);
+	glfwLoadTexture2D("textures/road.tga", GLFW_BUILD_MIPMAPS_BIT);
 }
 
 void Landscape::Render(glm::vec4 lightPos)
@@ -226,14 +327,13 @@ void Landscape::Render(glm::vec4 lightPos)
 	glColor3f(0.0f, 0.8f, 0.0f);
 	m_terrainProg.Bind();
 
-	// Pass our uniforms to the shader
+	// Pass our uniforms to the shaders
 	int lightPosUniform = glGetUniformLocation(m_terrainProg.Id(), "tf_LightPos");
 	glUniform4fv(lightPosUniform, 1, glm::value_ptr(lightPos));
 	int grassTexUniform = glGetUniformLocation(m_terrainProg.Id(), "tf_GrassTexture");
 	glUniform1i(grassTexUniform, 0); // Unit 0
 	int waterTexUniform = glGetUniformLocation(m_terrainProg.Id(), "tf_WaterTexture");
 	glUniform1i(waterTexUniform, 1); // Unit 1
-
 
 	glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_terrainVBO);
 	glVertexPointer(3, GL_FLOAT, sizeof(Point), (const void*)offsetof(Point, pos));
@@ -246,8 +346,22 @@ void Landscape::Render(glm::vec4 lightPos)
 
 	// Render the roadmap
 	glColor3f(1.0f, 1.0f, 1.0f);
-	glLineWidth(2.0f);
+	m_roadProg.Bind();
+
+	// Pass our uniforms to the shaders
+	int roadTexUniform = glGetUniformLocation(m_roadProg.Id(), "tf_RoadTexture");
+	glUniform1i(roadTexUniform, 2); // Unit 2
+
 	glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_roadVBO);
-	glVertexPointer(3, GL_FLOAT, sizeof(glm::vec3), NULL);
-	glDrawArrays(GL_LINES, 0, m_roadVertices.size());
+	glVertexPointer(3, GL_FLOAT, sizeof(Point), (const void*)offsetof(Point, pos));
+	glNormalPointer(GL_FLOAT, sizeof(Point), (const void*)offsetof(Point, norm));
+	glTexCoordPointer(2, GL_FLOAT, sizeof(Point), (const void*)offsetof(Point, uv));
+	glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, m_roadIBO);
+	glDrawElements(GL_TRIANGLES, m_roadIndices.size(), GL_UNSIGNED_INT, 0);
+
+	m_roadProg.Unbind();
+
+	glDisableClientState(GL_VERTEX_ARRAY);
+	glDisableClientState(GL_NORMAL_ARRAY);
+	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 }
