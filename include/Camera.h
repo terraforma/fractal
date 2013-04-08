@@ -15,7 +15,7 @@ public:
 	void Move(glm::vec3 amount);
 	void Rotate(glm::vec3 amount);
 
-	void Apply();
+	glm::mat4 Apply();
 private:
 	glm::vec3 m_viewDirection;
 	glm::vec3 m_rightVector;

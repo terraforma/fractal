@@ -19,6 +19,7 @@ using namespace LibTerra;
 struct Point {
 	glm::vec3 pos;
 	glm::vec3 norm;
+	glm::vec2 uv;
 };
 
 class Landscape
@@ -50,6 +51,7 @@ private:
 	tfBitmap m_waterMap;
 	tfRoadmap m_roadMap;
 
+	unsigned int m_grassTexture;
 	bool m_useVBO;
 	Shader m_terrainProg;
 	std::vector<Point> m_terrainVertices;

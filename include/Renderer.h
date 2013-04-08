@@ -5,7 +5,6 @@
 #include <Camera.h>
 
 #include <GL/glew.h>
-#include <GL/glu.h>
 #include <GL/glfw.h>
 
 class Renderer 
