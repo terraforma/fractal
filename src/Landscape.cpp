@@ -74,6 +74,12 @@ const float Landscape::Height()
 	return m_heightMap.Height()*MAP_SCALE;
 }
 
+glm::vec3 Landscape::ToSurfaceHeight(glm::vec3 v)
+{
+	glm::vec3 vec(v.x, v.y, HeightAt(v.x, v.y));
+	return vec;
+}
+
 const float Landscape::HeightAt(float x, float y)
 {
 	return (m_heightMap.At(ToBitmapCoordX(x), ToBitmapCoordY(y))/255.0f)*HEIGHT_SCALE;
@@ -188,20 +194,15 @@ void Landscape::Build()
 	
 	// We want to place the roads ever so slightly higher than the terrain,
 	// so that they are always visible.
-	const float roadElevation = 1.0f/RENDER_SCALE;
-	const float roadWidth = 4.0f/RENDER_SCALE;
+	const glm::vec3 roadElevation = glm::vec3(0.0f, 0.0f, 1.0f);
+	const float roadWidth = 4.0f;
 	int rPointIdx = 0;
 
 	// Create the roads
 	for (std::vector<std::pair<int, int> >::iterator it = edges.begin(); it != edges.end(); ++it)
 	{
-		glm::vec3 nodeA = nodes[it->first]/RENDER_SCALE;
-		glm::vec3 nodeB = nodes[it->second]/RENDER_SCALE;
-		// Do our various adjustments
-		nodeA.z *= HEIGHT_SCALE;
-		nodeA.z += roadElevation;
-		nodeB.z *= HEIGHT_SCALE;
-		nodeB.z += roadElevation;
+		glm::vec3 nodeA = ToSurfaceHeight(nodes[it->first]);
+		glm::vec3 nodeB = ToSurfaceHeight(nodes[it->second]);
 
 		// Move the nodes in to make room for intersections
 		glm::vec3 direction = glm::normalize(nodeA-nodeB);
@@ -215,10 +216,14 @@ void Landscape::Build()
 		Point p1;
 		Point p2;
 		Point p3;
-		p0.pos = nodeA+(perpendicular*(roadWidth/2.0f));
-		p1.pos = nodeA-(perpendicular*(roadWidth/2.0f));
-		p2.pos = nodeB-(perpendicular*(roadWidth/2.0f));
-		p3.pos = nodeB+(perpendicular*(roadWidth/2.0f));
+		p0.pos = ToSurfaceHeight(nodeA+(perpendicular*(roadWidth/2.0f)))+roadElevation;
+		p1.pos = ToSurfaceHeight(nodeA-(perpendicular*(roadWidth/2.0f)))+roadElevation;
+		p2.pos = ToSurfaceHeight(nodeB-(perpendicular*(roadWidth/2.0f)))+roadElevation;
+		p3.pos = ToSurfaceHeight(nodeB+(perpendicular*(roadWidth/2.0f)))+roadElevation;
+		p0.pos /= RENDER_SCALE;
+		p1.pos /= RENDER_SCALE;
+		p2.pos /= RENDER_SCALE;
+		p3.pos /= RENDER_SCALE;
 		p0.uv = glm::vec2(1.0f, 0.0f);
 		p1.uv = glm::vec2(0.0f, 0.0f);
 		p2.uv = glm::vec2(0.0f, 1.0f);
@@ -245,18 +250,20 @@ void Landscape::Build()
 	for (std::map<int, glm::vec3>::iterator it = nodes.begin(); it != nodes.end(); ++it)
 	{
 		glm::vec3 centerPoint = it->second;
-		centerPoint /= RENDER_SCALE;
-		centerPoint.z *= HEIGHT_SCALE;
-		centerPoint.z += roadElevation;
 
 		float halfWidth = roadWidth/2.0f;
 		// Create our 5 points
 		Point p0, p1, p2, p3, p4;
-		p0.pos = centerPoint;
-		p1.pos = glm::vec3(centerPoint.x-halfWidth, centerPoint.y-halfWidth, centerPoint.z);
-		p2.pos = glm::vec3(centerPoint.x-halfWidth, centerPoint.y+halfWidth, centerPoint.z);
-		p3.pos = glm::vec3(centerPoint.x+halfWidth, centerPoint.y+halfWidth, centerPoint.z);
-		p4.pos = glm::vec3(centerPoint.x+halfWidth, centerPoint.y-halfWidth, centerPoint.z);
+		p0.pos = ToSurfaceHeight(centerPoint)+roadElevation;
+		p1.pos = ToSurfaceHeight(glm::vec3(centerPoint.x-halfWidth, centerPoint.y-halfWidth, centerPoint.z))+roadElevation;
+		p2.pos = ToSurfaceHeight(glm::vec3(centerPoint.x-halfWidth, centerPoint.y+halfWidth, centerPoint.z))+roadElevation;
+		p3.pos = ToSurfaceHeight(glm::vec3(centerPoint.x+halfWidth, centerPoint.y+halfWidth, centerPoint.z))+roadElevation;
+		p4.pos = ToSurfaceHeight(glm::vec3(centerPoint.x+halfWidth, centerPoint.y-halfWidth, centerPoint.z))+roadElevation;
+		p0.pos /= RENDER_SCALE;
+		p1.pos /= RENDER_SCALE;
+		p2.pos /= RENDER_SCALE;
+		p3.pos /= RENDER_SCALE;
+		p4.pos /= RENDER_SCALE;
 		p0.uv = glm::vec2(0.5f, 0);
 		p1.uv = glm::vec2(0.0f, 1.0f);
 		p2.uv = glm::vec2(1.0f, 1.0f);

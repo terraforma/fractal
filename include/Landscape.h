@@ -46,6 +46,8 @@ private:
 	float ToWorldCoordX(int x);
 	float ToWorldCoordY(int y);
 
+	glm::vec3 ToSurfaceHeight(glm::vec3 v);
+
 	tfBitmap m_heightMap;
 	tfBitmap m_densityMap;
 	tfBitmap m_waterMap;
