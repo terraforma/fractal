@@ -63,7 +63,7 @@ void Renderer::Render()
 	glEnable (GL_DEPTH_TEST);
 	glShadeModel (GL_SMOOTH);
 
-	glm::vec4 lightPos(0.0f, 0.0f, 10.0f, 0.0f);
+	glm::vec4 lightPos(0.0f, 0.0f, 1.0f, 0.0f);
 
 	bool running = true;
 
