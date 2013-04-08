@@ -42,7 +42,7 @@ std::vector<std::pair<int, int> > Landscape::RoadEdges()
 	std::vector<std::pair<int, int> > edgePairs;
 
 	// Nodes visited is a bitmap of nodes we know all edges have been printed for
-	bool nodesVisited[m_roadMap.NodeMaxId()];
+	bool *nodesVisited = new bool[m_roadMap.NodeMaxId()]; /* !_HACK__ [Alex Melbourne] : Again, this is evil. */
 	memset(nodesVisited, 0, m_roadMap.NodeMaxId());
 
 	std::map<int, std::list<int> > edges = m_roadMap.Edges();
@@ -56,6 +56,8 @@ std::vector<std::pair<int, int> > Landscape::RoadEdges()
 		}
 		nodesVisited[nodeId] = true;
 	}
+
+	delete[] nodesVisited;
 
 	return edgePairs;
 }
