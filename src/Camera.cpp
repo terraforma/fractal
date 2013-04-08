@@ -1,5 +1,6 @@
 #include <Camera.h>
 
+#include <glm/gtc/matrix_transform.hpp>
 #include <GL/glew.h>
 #include <GL/glfw.h>
 #include <cstdio>
@@ -41,9 +42,9 @@ void Camera::Move(glm::vec3 amt)
 	m_position = m_position + m_upVector * amt.z;
 }
 
-void Camera::Apply()
+glm::mat4 Camera::Apply()
 {
 	glm::vec3 view = m_position + m_viewDirection;
 
-	gluLookAt(m_position.x, m_position.y, m_position.z, view.x, view.y, view.z, m_upVector.x, m_upVector.y, m_upVector.z);
+	return glm::lookAt(m_position, view, m_upVector);
 }

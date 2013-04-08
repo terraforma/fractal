@@ -1,5 +1,6 @@
 #include <Renderer.h>
 
+#include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <stdexcept>
 #include <cstdio>
@@ -40,7 +41,8 @@ void Renderer::WindowResize(int width, int height)
 
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	gluPerspective(60, width/height, 0.1, 100.0);
+	glm::mat4 projMatrix = glm::perspective(60.0f, float(width/height), 0.1f, 100.0f);
+	glLoadMatrixf(glm::value_ptr(projMatrix));
 	
 	glMatrixMode(GL_MODELVIEW);
 }
@@ -117,12 +119,11 @@ void Renderer::Render()
 		// Render
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glLoadIdentity();
-		m_camera.Apply();
+		glm::mat4 viewMatrix = m_camera.Apply();
+		glLoadMatrixf(glm::value_ptr(viewMatrix));
 
 		// Calculate light position
-		glm::mat4 mv;
-		glGetFloatv(GL_MODELVIEW_MATRIX, glm::value_ptr(mv));
-		glm::vec4 adjustedLightPos = mv * lightPos;
+		glm::vec4 adjustedLightPos = viewMatrix * lightPos;
 
 		glColor3f(1.0f, 1.0f, 1.0f);
 		m_landscape->Render(adjustedLightPos);
