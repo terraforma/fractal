@@ -56,7 +56,7 @@ private:
 	bool m_useVBO;
 	Shader m_terrainProg;
 	std::vector<Point> m_terrainVertices;
-	std::vector<unsigned short> m_terrainIndices;
+	std::vector<unsigned int> m_terrainIndices;
 	unsigned int m_terrainVBO;
 	unsigned int m_terrainIBO;
 	std::vector<glm::vec3> m_roadVertices;

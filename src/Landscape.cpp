@@ -178,7 +178,7 @@ void Landscape::Build()
 
 	glGenBuffersARB(1, &m_terrainIBO);
 	glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER, m_terrainIBO);
-	glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER, m_terrainIndices.size()*sizeof(unsigned short), &m_terrainIndices[0], GL_STATIC_DRAW);
+	glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER, m_terrainIndices.size()*sizeof(unsigned int), &m_terrainIndices[0], GL_STATIC_DRAW);
 
 
 	// Build the roadmap vertices and buffer
@@ -240,7 +240,7 @@ void Landscape::Render(glm::vec4 lightPos)
 	glNormalPointer(GL_FLOAT, sizeof(Point), (const void*)offsetof(Point, norm));
 	glTexCoordPointer(2, GL_FLOAT, sizeof(Point), (const void*)offsetof(Point, uv));
 	glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, m_terrainIBO);
-	glDrawElements(GL_TRIANGLES, m_terrainIndices.size(), GL_UNSIGNED_SHORT, 0);
+	glDrawElements(GL_TRIANGLES, m_terrainIndices.size(), GL_UNSIGNED_INT, 0);
 
 	m_terrainProg.Unbind();
 
