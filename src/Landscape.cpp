@@ -204,9 +204,14 @@ void Landscape::Build()
 
 	// Load our textures
 	glGenTextures(1, &m_grassTexture);
-	glActiveTexture(0);
+	glActiveTexture(GL_TEXTURE0+0);
 	glBindTexture(GL_TEXTURE_2D, m_grassTexture);
-	glfwLoadTexture2D("textures/grass-texture.tga", GLFW_BUILD_MIPMAPS_BIT);
+	glfwLoadTexture2D("textures/grass.tga", GLFW_BUILD_MIPMAPS_BIT);
+
+	glGenTextures(1, &m_waterTexture);
+	glActiveTexture(GL_TEXTURE0+1);
+	glBindTexture(GL_TEXTURE_2D, m_waterTexture);
+	glfwLoadTexture2D("textures/water.tga", GLFW_BUILD_MIPMAPS_BIT);
 }
 
 void Landscape::Render(glm::vec4 lightPos)
@@ -224,6 +229,9 @@ void Landscape::Render(glm::vec4 lightPos)
 	glUniform4fv(lightPosUniform, 1, glm::value_ptr(lightPos));
 	int grassTexUniform = glGetUniformLocation(m_terrainProg.Id(), "tf_GrassTexture");
 	glUniform1i(grassTexUniform, 0); // Unit 0
+	int waterTexUniform = glGetUniformLocation(m_terrainProg.Id(), "tf_WaterTexture");
+	glUniform1i(waterTexUniform, 1); // Unit 1
+
 
 	glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_terrainVBO);
 	glVertexPointer(3, GL_FLOAT, sizeof(Point), (const void*)offsetof(Point, pos));

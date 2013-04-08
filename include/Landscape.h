@@ -52,6 +52,7 @@ private:
 	tfRoadmap m_roadMap;
 
 	unsigned int m_grassTexture;
+	unsigned int m_waterTexture;
 	bool m_useVBO;
 	Shader m_terrainProg;
 	std::vector<Point> m_terrainVertices;
