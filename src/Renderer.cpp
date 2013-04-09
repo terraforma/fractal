@@ -55,6 +55,8 @@ void Renderer::Render()
 	if (glewInit() != GLEW_OK)
 		throw std::runtime_error("Unable to initialize glew");
 
+	glfwSetWindowTitle("Terraforma");
+
 	m_landscape->Build();
 
 	glfwSetWindowSizeCallback(Renderer::WindowResize);
