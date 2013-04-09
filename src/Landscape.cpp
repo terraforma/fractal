@@ -13,11 +13,11 @@
 
 #define VERT_ADDR(x,y) (((x) * m_heightMap.Width())+(y))
 
-Landscape::Landscape(std::string heightFile, std::string densityFile, std::string waterFile, std::string roadFile)
+Landscape::Landscape(std::string heightFile, std::string densityFile, std::string waterFile, std::string roadFile, std::string plotFile)
 	: m_heightMap(heightFile), m_densityMap(densityFile), 
-	  m_waterMap(waterFile), m_roadMap(roadFile)
+	  m_waterMap(waterFile), m_roadMap(roadFile), m_plotMap(plotFile)
 {
-	
+	printf("%s %s %s %s %s\n", heightFile.c_str(), densityFile.c_str(), waterFile.c_str(), roadFile.c_str(), plotFile.c_str());
 }
 
 Landscape::~Landscape()
@@ -303,6 +303,101 @@ void Landscape::Build()
 	glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER, m_roadIBO);
 	glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER, m_roadIndices.size()*sizeof(unsigned int), &m_roadIndices[0], GL_STATIC_DRAW);
 
+	// Build the plotmap vertices and buffer
+	std::map<int, tfBuilding> buildings = m_plotMap.Buildings();
+	glm::vec3 floorHeight = glm::vec3(0.0f, 0.0f, 1.0f);
+	int pPointIdx = 0;
+	for (std::map<int, tfBuilding>::iterator it = buildings.begin(); it != buildings.end(); ++it)
+	{
+		tfBuilding building = it->second;
+		// Define the 8 points
+		Point bp0; // basepoint
+		Point bp1;
+		Point bp2;
+		Point bp3;
+		Point tp0; // top point
+		Point tp1;
+		Point tp2;
+		Point tp3;
+		bp0.pos = building.basepoints[0];
+		bp1.pos = building.basepoints[1];
+		bp2.pos = building.basepoints[2];
+		bp3.pos = building.basepoints[3];
+		tp0.pos = bp0.pos + (floorHeight * (float)building.numFloors);
+		tp1.pos = bp1.pos + (floorHeight * (float)building.numFloors);
+		tp2.pos = bp2.pos + (floorHeight * (float)building.numFloors);
+		tp3.pos = bp3.pos + (floorHeight * (float)building.numFloors);
+		bp0.pos /= RENDER_SCALE;
+		bp1.pos /= RENDER_SCALE;
+		bp2.pos /= RENDER_SCALE;
+		bp3.pos /= RENDER_SCALE;
+		tp0.pos /= RENDER_SCALE;
+		tp1.pos /= RENDER_SCALE;
+		tp2.pos /= RENDER_SCALE;
+		tp3.pos /= RENDER_SCALE;
+
+		m_plotVertices.push_back(bp0);
+		m_plotVertices.push_back(bp1);
+		m_plotVertices.push_back(bp2);
+		m_plotVertices.push_back(bp3);
+
+		m_plotVertices.push_back(tp0);
+		m_plotVertices.push_back(tp1);
+		m_plotVertices.push_back(tp2);
+		m_plotVertices.push_back(tp3);
+
+		int bp0id = pPointIdx++;
+		int bp1id = pPointIdx++;
+		int bp2id = pPointIdx++;
+		int bp3id = pPointIdx++;
+
+		int tp0id = pPointIdx++;
+		int tp1id = pPointIdx++;
+		int tp2id = pPointIdx++;
+		int tp3id = pPointIdx++;
+
+		// Define the 4 faces (of 2 triangles each)
+		m_plotIndices.push_back(bp0id);
+		m_plotIndices.push_back(bp1id);
+		m_plotIndices.push_back(tp0id);
+
+		m_plotIndices.push_back(tp0id);
+		m_plotIndices.push_back(bp1id);
+		m_plotIndices.push_back(tp1id);
+
+		m_plotIndices.push_back(tp1id);
+		m_plotIndices.push_back(bp1id);
+		m_plotIndices.push_back(bp2id);
+
+		m_plotIndices.push_back(tp1id);
+		m_plotIndices.push_back(bp2id);
+		m_plotIndices.push_back(tp3id);
+
+		m_plotIndices.push_back(tp2id);
+		m_plotIndices.push_back(bp2id);
+		m_plotIndices.push_back(bp3id);
+
+		m_plotIndices.push_back(tp2id);
+		m_plotIndices.push_back(bp3id);
+		m_plotIndices.push_back(tp3id);
+
+		m_plotIndices.push_back(tp3id);
+		m_plotIndices.push_back(bp3id);
+		m_plotIndices.push_back(bp0id);
+
+		m_plotIndices.push_back(tp3id);
+		m_plotIndices.push_back(bp0id);
+		m_plotIndices.push_back(tp0id);
+	}
+
+	glGenBuffersARB(1, &m_plotVBO);
+	glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_plotVBO);
+	glBufferDataARB(GL_ARRAY_BUFFER_ARB, m_plotVertices.size()*sizeof(Point), &m_plotVertices[0], GL_STATIC_DRAW_ARB);
+
+	glGenBuffersARB(1, &m_plotIBO);
+	glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER, m_plotIBO);
+	glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER, m_plotIndices.size()*sizeof(unsigned int), &m_plotIndices[0], GL_STATIC_DRAW);
+
 	// Load our shaders
 	m_terrainProg.Init(TerrainVS, TerrainFS);
 	m_roadProg.Init(RoadVS, RoadFS);
@@ -367,6 +462,17 @@ void Landscape::Render(glm::vec4 lightPos)
 	glDrawElements(GL_TRIANGLES, m_roadIndices.size(), GL_UNSIGNED_INT, 0);
 
 	m_roadProg.Unbind();
+
+	// Render the plotmap
+	glDisableClientState(GL_NORMAL_ARRAY);
+	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+
+	glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_plotVBO);
+	glVertexPointer(3, GL_FLOAT, sizeof(Point), (const void*)offsetof(Point, pos));
+	glNormalPointer(GL_FLOAT, sizeof(Point), (const void*)offsetof(Point, norm));
+	glTexCoordPointer(2, GL_FLOAT, sizeof(Point), (const void*)offsetof(Point, uv));
+	glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, m_plotIBO);
+	glDrawElements(GL_TRIANGLES, m_plotIndices.size(), GL_UNSIGNED_INT, 0);
 
 	glDisableClientState(GL_VERTEX_ARRAY);
 	glDisableClientState(GL_NORMAL_ARRAY);
