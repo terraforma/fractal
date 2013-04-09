@@ -63,7 +63,7 @@ void Renderer::Render()
 	glEnable (GL_DEPTH_TEST);
 	glShadeModel (GL_SMOOTH);
 
-	glm::vec4 lightPos(0.0f, 0.0f, 4.0f, 0.0f);
+	glm::vec4 lightPos(0.0f, 0.0f, 100.0f, 0.0f);
 
 	bool running = true;
 
@@ -122,11 +122,8 @@ void Renderer::Render()
 		glm::mat4 viewMatrix = m_camera.Apply();
 		glLoadMatrixf(glm::value_ptr(viewMatrix));
 
-		// Calculate light position
-		glm::vec4 adjustedLightPos = viewMatrix * lightPos;
-
 		glColor3f(1.0f, 1.0f, 1.0f);
-		m_landscape->Render(adjustedLightPos);
+		m_landscape->Render(lightPos);
 		
 		glfwSwapBuffers();
 

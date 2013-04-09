@@ -48,6 +48,7 @@ private:
 	float ToWorldCoordY(int y);
 
 	glm::vec3 ToSurfaceHeight(glm::vec3 v);
+	glm::vec3 CalcVertexNormal(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, glm::vec3 p3, glm::vec3 p4);
 
 	tfBitmap m_heightMap;
 	tfBitmap m_densityMap;
@@ -58,6 +59,7 @@ private:
 	unsigned int m_grassTexture;
 	unsigned int m_waterTexture;
 	unsigned int m_roadTexture;
+	unsigned int m_scraperTexture;
 
 	bool m_useVBO;
 

@@ -38,4 +38,24 @@ void main() { \
     gl_FragColor = textureColor; \
 }";
 
+const char* PlotVS = "uniform vec4 tf_LightPos; \
+varying float lightFactor; \
+void main() { \
+    vec3 normal = normalize(gl_NormalMatrix*gl_Normal).xyz; \
+    vec3 vert = (gl_ModelViewMatrix * gl_Vertex).xyz; \
+    vec3 lightPos = (gl_ModelViewMatrix * tf_LightPos).xyz; \
+    vec3 lightDir = normalize(lightPos-vert).xyz; \
+    lightFactor = dot(lightDir, normal); \
+    gl_TexCoord[0] = gl_MultiTexCoord0; \
+    gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex; \
+}";
+
+const char* PlotFS = "uniform sampler2D tf_ScraperTexture; \
+uniform vec4 tf_LightPos; \
+varying float lightFactor; \
+void main() { \
+    vec4 textureColor = texture2D(tf_ScraperTexture, vec2(gl_TexCoord[0])); \
+    gl_FragColor = textureColor * lightFactor; \
+}";
+
 #endif /* _SHADERDEF_H_ */

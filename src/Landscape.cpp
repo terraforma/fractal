@@ -115,9 +115,22 @@ float Landscape::ToWorldCoordY(int y)
 	return (y * MAP_SCALE)-(Height()/2);
 }
 
+glm::vec3 Landscape::CalcVertexNormal(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, glm::vec3 p3, glm::vec3 p4)
+{
+	// p0 is the vertex for which we want to calculate the normal,
+	// p1-4 are the 4 surrounding vertices in counter clockwise order
+	glm::vec3 norm(0.0f, 0.0f, 0.0f);
+	norm = norm + glm::normalize(glm::cross(p1 - p0, p2 - p0));
+	norm = norm + glm::normalize(glm::cross(p2 - p0, p3 - p0));
+	norm = norm + glm::normalize(glm::cross(p3 - p0, p4 - p0));
+	norm = norm + glm::normalize(glm::cross(p4 - p0, p1 - p0));
+	norm = glm::normalize(norm);
+	return norm;
+}
+
 void Landscape::Build()
 {
-	const float terrainTexScale = 10.0f; // How many quads to scale the texture across
+	const float terrainTexScale = 5.0f; // How many quads to scale the texture across
 	// Build the terrain vertices and buffer
 	for (int x = 0; x < m_heightMap.Width(); x++) 
 	{
@@ -142,13 +155,8 @@ void Landscape::Build()
 			glm::vec3 p2 = m_terrainVertices[VERT_ADDR(x,y-1)].pos;
 			glm::vec3 p3 = m_terrainVertices[VERT_ADDR(x+1,y)].pos;
 			glm::vec3 p4 = m_terrainVertices[VERT_ADDR(x,y+1)].pos;
-			glm::vec3 norm(0.0f, 0.0f, 0.0f);
-			norm = norm + glm::normalize(glm::cross(p1 - p0, p2 - p0));
-			norm = norm + glm::normalize(glm::cross(p2 - p0, p3 - p0));
-			norm = norm + glm::normalize(glm::cross(p3 - p0, p4 - p0));
-			norm = norm + glm::normalize(glm::cross(p4 - p0, p1 - p0));
-			norm = glm::normalize(norm);
-			m_terrainVertices[VERT_ADDR(x,y)].norm = norm;
+
+			m_terrainVertices[VERT_ADDR(x,y)].norm = CalcVertexNormal(p0, p1, p2, p3, p4);
 		}
 	}
 
@@ -319,6 +327,7 @@ void Landscape::Build()
 		Point tp1;
 		Point tp2;
 		Point tp3;
+		// Find their positions
 		bp0.pos = building.basepoints[0];
 		bp1.pos = building.basepoints[1];
 		bp2.pos = building.basepoints[2];
@@ -327,6 +336,30 @@ void Landscape::Build()
 		tp1.pos = bp1.pos + (floorHeight * (float)building.numFloors);
 		tp2.pos = bp2.pos + (floorHeight * (float)building.numFloors);
 		tp3.pos = bp3.pos + (floorHeight * (float)building.numFloors);
+		// Calculate the vertex normals
+		bp0.norm = CalcVertexNormal(bp0.pos, bp3.pos, bp2.pos, bp1.pos, tp0.pos);
+		bp1.norm = CalcVertexNormal(bp1.pos, bp0.pos, bp3.pos, bp2.pos, tp1.pos);
+		bp2.norm = CalcVertexNormal(bp2.pos, bp1.pos, bp0.pos, bp3.pos, tp2.pos);
+		bp3.norm = CalcVertexNormal(bp3.pos, bp2.pos, bp1.pos, bp0.pos, tp3.pos);
+		tp0.norm = CalcVertexNormal(tp0.pos, tp3.pos, tp2.pos, tp1.pos, bp0.pos);
+		tp1.norm = CalcVertexNormal(tp1.pos, tp0.pos, tp3.pos, tp2.pos, bp1.pos);
+		tp2.norm = CalcVertexNormal(tp2.pos, tp1.pos, tp0.pos, tp3.pos, bp2.pos);
+		tp3.norm = CalcVertexNormal(tp3.pos, tp2.pos, tp1.pos, tp0.pos, bp3.pos);
+
+		// Calculate the UV coords
+		bp0.uv = glm::vec2(0.0f, 0.25f*building.numFloors);
+		tp0.uv = glm::vec2(0.0f, 0.0f*building.numFloors);
+
+		bp1.uv = glm::vec2(1.0f, 0.25f*building.numFloors);
+		tp1.uv = glm::vec2(1.0f, 0.0f*building.numFloors);
+
+		bp2.uv = glm::vec2(0.0f, 0.25f*building.numFloors);
+		tp2.uv = glm::vec2(0.0f, 0.0f*building.numFloors);
+
+		bp3.uv = glm::vec2(1.0f, 0.25f*building.numFloors);
+		tp3.uv = glm::vec2(1.0f, 0.0f*building.numFloors);
+
+		// Scale for rendering
 		bp0.pos /= RENDER_SCALE;
 		bp1.pos /= RENDER_SCALE;
 		bp2.pos /= RENDER_SCALE;
@@ -371,7 +404,7 @@ void Landscape::Build()
 
 		m_plotIndices.push_back(tp1id);
 		m_plotIndices.push_back(bp2id);
-		m_plotIndices.push_back(tp3id);
+		m_plotIndices.push_back(tp2id);
 
 		m_plotIndices.push_back(tp2id);
 		m_plotIndices.push_back(bp2id);
@@ -388,6 +421,15 @@ void Landscape::Build()
 		m_plotIndices.push_back(tp3id);
 		m_plotIndices.push_back(bp0id);
 		m_plotIndices.push_back(tp0id);
+
+		// And their roof
+		m_plotIndices.push_back(tp0id);
+		m_plotIndices.push_back(tp1id);
+		m_plotIndices.push_back(tp2id);
+
+		m_plotIndices.push_back(tp0id);
+		m_plotIndices.push_back(tp2id);
+		m_plotIndices.push_back(tp3id);
 	}
 
 	glGenBuffersARB(1, &m_plotVBO);
@@ -401,6 +443,7 @@ void Landscape::Build()
 	// Load our shaders
 	m_terrainProg.Init(TerrainVS, TerrainFS);
 	m_roadProg.Init(RoadVS, RoadFS);
+	m_plotProg.Init(PlotVS, PlotFS);
 
 	// Load our textures
 	glGenTextures(1, &m_grassTexture);
@@ -416,7 +459,14 @@ void Landscape::Build()
 	glGenTextures(1, &m_roadTexture);
 	glActiveTexture(GL_TEXTURE0+2);
 	glBindTexture(GL_TEXTURE_2D, m_roadTexture);
-	glfwLoadTexture2D("textures/road.tga", GLFW_BUILD_MIPMAPS_BIT);
+    glfwLoadTexture2D("textures/road.tga", GLFW_BUILD_MIPMAPS_BIT);
+
+	glGenTextures(1, &m_scraperTexture);
+	glActiveTexture(GL_TEXTURE0+3);
+	glBindTexture(GL_TEXTURE_2D, m_scraperTexture);
+	glfwLoadTexture2D("textures/scraper.tga", GLFW_BUILD_MIPMAPS_BIT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 }
 
 void Landscape::Render(glm::vec4 lightPos)
@@ -464,8 +514,10 @@ void Landscape::Render(glm::vec4 lightPos)
 	m_roadProg.Unbind();
 
 	// Render the plotmap
-	glDisableClientState(GL_NORMAL_ARRAY);
-	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+	m_plotProg.Bind();
+
+	int scraperTexUniform = glGetUniformLocation(m_plotProg.Id(), "tf_ScraperTexture");
+	glUniform1i(scraperTexUniform, 3); // Unit 3
 
 	glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_plotVBO);
 	glVertexPointer(3, GL_FLOAT, sizeof(Point), (const void*)offsetof(Point, pos));
@@ -473,6 +525,8 @@ void Landscape::Render(glm::vec4 lightPos)
 	glTexCoordPointer(2, GL_FLOAT, sizeof(Point), (const void*)offsetof(Point, uv));
 	glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, m_plotIBO);
 	glDrawElements(GL_TRIANGLES, m_plotIndices.size(), GL_UNSIGNED_INT, 0);
+
+	m_plotProg.Unbind();
 
 	glDisableClientState(GL_VERTEX_ARRAY);
 	glDisableClientState(GL_NORMAL_ARRAY);
