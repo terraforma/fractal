@@ -5,12 +5,12 @@
 #include <fstream>
 #include <sstream>
 
-const char* LoadShader(const char* name)
+std::string LoadShader(const char* name)
 {
 	std::ifstream stream(name);
 	std::stringstream buf;
 	buf << stream.rdbuf();
-	return buf.str().c_str();
+	return buf.str();
 }
 
 Shader::Shader()
@@ -19,13 +19,16 @@ Shader::Shader()
 
 }
 
-void Shader::Init(const char* vertShader, const char* fragShader)
+void Shader::Init(std::string vertShader, std::string fragShader)
 {
 	m_vertProgId = glCreateShader(GL_VERTEX_SHADER);
 	m_fragProgId = glCreateShader(GL_FRAGMENT_SHADER);
 
-	glShaderSource(m_vertProgId, 1, &vertShader, 0);
-	glShaderSource(m_fragProgId, 1, &fragShader, 0);
+	const char* vertSource = vertShader.c_str();
+	const char* fragSource = fragShader.c_str();
+
+	glShaderSource(m_vertProgId, 1, &vertSource, 0);
+	glShaderSource(m_fragProgId, 1, &fragSource, 0);
 
 	glCompileShader(m_vertProgId);
 	if (!ShaderCompiled(m_vertProgId))

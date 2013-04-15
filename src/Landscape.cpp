@@ -6,18 +6,16 @@
 #include <GL/glfw.h>
 #include <cstddef>
 
-#include <ShaderDef.h>
-
 #define HEIGHT_SCALE 10.0f
 #define RENDER_SCALE 50.0f
 
 #define VERT_ADDR(x,y) (((x) * m_heightMap.Width())+(y))
 
 Landscape::Landscape(std::string heightFile, std::string densityFile, std::string waterFile, std::string roadFile, std::string plotFile)
-	: m_heightMap(heightFile), m_densityMap(densityFile), 
+	: m_heightMap(heightFile), m_densityMap(densityFile),
 	  m_waterMap(waterFile), m_roadMap(roadFile), m_plotMap(plotFile)
 {
-	printf("%s %s %s %s %s\n", heightFile.c_str(), densityFile.c_str(), waterFile.c_str(), roadFile.c_str(), plotFile.c_str());
+
 }
 
 Landscape::~Landscape()
@@ -64,7 +62,7 @@ std::vector<std::pair<int, int> > Landscape::RoadEdges()
 }
 
 
-const float Landscape::Width() 
+const float Landscape::Width()
 {
 	return m_heightMap.Width()*MAP_SCALE;
 }
@@ -132,9 +130,9 @@ void Landscape::Build()
 {
 	const float terrainTexScale = 5.0f; // How many quads to scale the texture across
 	// Build the terrain vertices and buffer
-	for (int x = 0; x < m_heightMap.Width(); x++) 
+	for (int x = 0; x < m_heightMap.Width(); x++)
 	{
-		for (int y = 0; y < m_heightMap.Height(); y++) 
+		for (int y = 0; y < m_heightMap.Height(); y++)
 		{
 			float worldX = ToWorldCoordX(x);
 			float worldY = ToWorldCoordY(y);
@@ -146,9 +144,9 @@ void Landscape::Build()
 		}
 	}
 	// Calculate vertex normals
-	for (int x = 1; x < m_heightMap.Width()-1; x++) 
+	for (int x = 1; x < m_heightMap.Width()-1; x++)
 	{
-		for (int y = 1; y < m_heightMap.Height()-1; y++) 
+		for (int y = 1; y < m_heightMap.Height()-1; y++)
 		{
 			glm::vec3 p0 = m_terrainVertices[VERT_ADDR(x,y)].pos;
 			glm::vec3 p1 = m_terrainVertices[VERT_ADDR(x-1,y)].pos;
@@ -161,9 +159,9 @@ void Landscape::Build()
 	}
 
 	// Build terrain indices and buffer
-	for (int x = 1; x < m_heightMap.Width(); x++) 
+	for (int x = 1; x < m_heightMap.Width(); x++)
 	{
-		for (int y = 1; y < m_heightMap.Height(); y++) 
+		for (int y = 1; y < m_heightMap.Height(); y++)
 		{
 			// Define a quad containing the 4 points left+up
 			// Top left
@@ -199,7 +197,7 @@ void Landscape::Build()
 	// Build the roadmap vertices and buffer
 	std::map<int, glm::vec3> nodes = RoadNodes();
 	std::vector<std::pair<int, int> > edges = RoadEdges();
-	
+
 	// We want to place the roads ever so slightly higher than the terrain,
 	// so that they are always visible.
 	const glm::vec3 roadElevation = glm::vec3(0.0f, 0.0f, 1.0f);
@@ -441,9 +439,9 @@ void Landscape::Build()
 	glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER, m_plotIndices.size()*sizeof(unsigned int), &m_plotIndices[0], GL_STATIC_DRAW);
 
 	// Load our shaders
-	m_terrainProg.Init(TerrainVS, TerrainFS);
-	m_roadProg.Init(RoadVS, RoadFS);
-	m_plotProg.Init(PlotVS, PlotFS);
+	m_terrainProg.Init(LoadShader("shader/terrain.vs"), LoadShader("shader/terrain.fs"));
+	m_roadProg.Init(LoadShader("shader/road.vs"), LoadShader("shader/road.fs"));
+	m_plotProg.Init(LoadShader("shader/plot.vs"), LoadShader("shader/plot.fs"));
 
 	// Load our textures
 	glGenTextures(1, &m_grassTexture);

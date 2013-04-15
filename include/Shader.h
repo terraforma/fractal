@@ -1,7 +1,9 @@
 #ifndef _SHADER_H_
 #define _SHADER_H_
 
-const char* LoadShader(const char* name);
+#include <string>
+
+std::string LoadShader(const char* name);
 
 class Shader
 {
@@ -9,7 +11,7 @@ public:
     Shader();
     virtual ~Shader();
 
-	void Init(const char* vertShader, const char* fragShader);
+	void Init(std::string vertShader, std::string fragShader);
 	unsigned int Id();
 	void Bind();
 	void Unbind();
